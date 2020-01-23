@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="cn" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="css/bootstrap-theme.min.css"/>
+    <link rel="stylesheet" href="css/community.css">
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="js/bootstrap.min.js" type="application/javascript"></script>
+    <title>springboot_demo</title>
+</head>
+<body>
+<div th:insert="~{navibar.html :: nav}"></div>
+<div class="container-fluid main">
+    <div class="row">
+        <div class="col-lg-9 col-md-9 col-xs-9">
+            <h3><span class="glyphicon glyphicon-plus" aria-hidden="true"></span> 发起</h3>
+            <hr>
+            <form action="/publish" method="post">
+                <div class="form-group">
+                    <label for="title">问题标题(简单扼要):</label>
+                    <input type="text" class="form-control" id="title" name="title" th:value="${title}"
+                           placeholder="问题标题">
+                </div>
+                <div class="form-group">
+                    <label for="description">详细内容(必填，请按照右侧指示):</label>
+                    <textarea class="form-control" name="description" id="description" th:text="${description}"
+                              cols="30" rows="10"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="tag">添加标签</label>
+                    <input type="text" class="form-control" id="tag" name="tag" th:value="${tag}"
+                           placeholder="输入标签,以逗号 ' , ' 分隔">
+                </div>
+                <span class="alert alert-danger" th:text="${error}" th:if="${error!=null}"></span>
+                <button type="submit" class="btn btn-success btn-publish">发布</button>
+            </form>
+        </div>
+        <div class="col-lg-3 col-md-3 col-xs-3">
+            <h3>问题发起指南</h3></br>
+            问题标题：使用精简的语言描述您发布的问题，不超过25字。</br>
+            问题详情：补充您的问题详细内容</br>
+            选择标签：选择一个或多个合适的标签，使用逗号隔开每个标签。
+        </div>
+    </div>
+</div>
+</body>
+</html>
