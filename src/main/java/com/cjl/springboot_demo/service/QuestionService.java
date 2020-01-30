@@ -17,7 +17,6 @@ import java.util.List;
 public class QuestionService {
     @Autowired
     private QuestionMapper questionMapper;
-
     @Autowired
     private UserMapper userMapper;
 
@@ -29,17 +28,21 @@ public class QuestionService {
      * @return
      */
     public PaginationDTO getQuestionDTOList(Integer page, Integer size) {
-        //前端展示分页需要用的元素封装对象
         PaginationDTO paginationDTO = new PaginationDTO();
-        //数据总条数
+        Integer totalPage;
         Integer totalCount = questionMapper.count();
-        paginationDTO.setPagination(totalCount, page, size);
+        if (totalCount % size == 0) {
+            totalPage = totalCount / size;
+        } else {
+            totalPage = totalCount / size + 1;
+        }
         if (page < 1) {
             page = 1;
         }
-        if (page > paginationDTO.getTotalPage()) {
-            page = paginationDTO.getTotalPage();
+        if (page > totalPage) {
+            page = totalPage;
         }
+        paginationDTO.setPagination(totalPage, page);
 
         Integer offset = (page - 1) * size;
         //获取数据库分页查询的数据
@@ -57,5 +60,74 @@ public class QuestionService {
         }
         paginationDTO.setQuestionDTOS(questionDTOS);
         return paginationDTO;
+    }
+
+    /**
+     * 我的问题分页
+     *
+     * @param page
+     * @param size
+     * @param userId
+     * @return
+     */
+    public PaginationDTO getQuestionDTOListByUserId(Integer page, Integer size, Integer userId) {
+        PaginationDTO paginationDTO = new PaginationDTO();
+        Integer totalPage;
+        Integer totalCount = questionMapper.countByUserId(userId);
+        if (totalCount % size == 0) {
+            totalPage = totalCount / size;
+        } else {
+            totalPage = totalCount / size + 1;
+        }
+        if (page < 1) {
+            page = 1;
+        }
+        if (page > totalPage) {
+            page = totalPage;
+        }
+        paginationDTO.setPagination(totalPage, page);
+        //查询为空的时候？
+        Integer offset = (page - 1) * size;
+        //获取数据库分页查询的数据
+        List<Question> questions = questionMapper.getQuestionListByUserId(offset, size, userId);
+        List<QuestionDTO> questionDTOS = new ArrayList<>();
+
+        for (Question question : questions) {
+            //通过question表中的createor字段去user表获取question发布人的信息
+            User user = userMapper.findById(question.getCreator());
+            QuestionDTO questionDTO = new QuestionDTO();
+            //使用spring内置的beanUtiils类将question对象的属性set到questiondto里
+            BeanUtils.copyProperties(question, questionDTO);
+            questionDTO.setUser(user);
+            questionDTOS.add(questionDTO);
+        }
+        paginationDTO.setQuestionDTOS(questionDTOS);
+        return paginationDTO;
+    }
+
+    /**
+     * 根据问题id获取问题详情
+     *
+     * @param id
+     * @return
+     */
+    public QuestionDTO getById(Integer id) {
+        Question question = questionMapper.getById(id);
+        User user = userMapper.findById(question.getCreator());
+        QuestionDTO questionDTO = new QuestionDTO();
+        BeanUtils.copyProperties(question, questionDTO);
+        questionDTO.setUser(user);
+        return questionDTO;
+    }
+
+    public void createOrUpdate(Question question) {
+        if(question.getId()==null){
+            question.setGmtCreate(System.currentTimeMillis());
+            question.setGmtModified(question.getGmtCreate());
+            questionMapper.create(question);
+        }else {
+            question.setGmtModified(question.getGmtCreate());
+            questionMapper.update(question);
+        }
     }
 }

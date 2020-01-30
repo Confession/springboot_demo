@@ -1,10 +1,7 @@
 package com.cjl.springboot_demo.mapper;
 
 import com.cjl.springboot_demo.model.User;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface UserMapper {
@@ -16,4 +13,10 @@ public interface UserMapper {
 
     @Select("select * from user where id=#{id}")
     User findById(@Param("id") Integer id);
+
+    @Select("select * from user where account_id=#{accountId}")
+    User findByAccountId(@Param("accountId") String accountId);
+
+    @Update("update table user set name = #{name},token=#{token},gmt_modified=#{gmtModified},avatar_url=#{avatorUrl} where account_id =#{accountId}")
+    void update(User dbUser);
 }

@@ -6,6 +6,7 @@ import com.cjl.springboot_demo.dto.GithubUser;
 import com.cjl.springboot_demo.mapper.UserMapper;
 import com.cjl.springboot_demo.model.User;
 import com.cjl.springboot_demo.provider.GithubProvider;
+import com.cjl.springboot_demo.service.UserService;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import sun.plugin2.message.CookieReplyMessage;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -39,12 +41,12 @@ public class AuthController {
     private String client_secret;
 
     @Autowired
-    private UserMapper userMapper;
+    private UserService userService;
 
     @GetMapping("/callback")
     public String callback(@RequestParam(name = "code") String code,
                            @RequestParam(name = "state") String state,
-                           HttpServletResponse response){
+                           HttpServletResponse response) {
         AccessTokenDTO accessTokenDTO = new AccessTokenDTO();
         accessTokenDTO.setCode(code);
         accessTokenDTO.setRedirect_uri(redirect_uri);
@@ -53,25 +55,23 @@ public class AuthController {
         accessTokenDTO.setClient_secret(client_secret);
         try {
             String accessToken = githubProvider.getAccessToken(accessTokenDTO);
-            GithubUser githubUser=githubProvider.getUser(accessToken);
+            GithubUser githubUser = githubProvider.getUser(accessToken);
             //System.out.println(user);
-            if (githubUser!=null){
+            if (githubUser != null) {
                 User user = new User();
                 String token = UUID.randomUUID().toString();
                 user.setToken(token);
-                if (githubUser.getName()==null){
+                if (githubUser.getName() == null) {
                     user.setName(githubUser.getLogin());//暂时使用GitHub的login属性当作name
-                }else {
+                } else {
                     user.setName(githubUser.getName());
                 }
                 user.setAccountId(String.valueOf(githubUser.getId()));
-                user.setGmtCreate(System.currentTimeMillis());
-                user.setGmtModified(user.getGmtCreate());
                 user.setAvatarUrl(githubUser.getAvatarUrl());
-                userMapper.insertUser(user);
-                response.addCookie(new Cookie("token",token));
+                userService.createOrUpdate(user);
+                response.addCookie(new Cookie("token", token));
                 return "redirect:/";
-            }else {
+            } else {
                 //登录失败，重新登录
                 return "redirect:/";
             }
@@ -79,5 +79,30 @@ public class AuthController {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * 退出登录状态，删除cookie中的token和session
+     * @param request
+     * @return
+     */
+    @GetMapping("/logout")
+    public String logout(HttpServletRequest request,
+                         HttpServletResponse response){
+        request.getSession().removeAttribute("user");
+        //删除cookie 创建一个同名的cookie并将其初始化为空，setMaxAge(0)
+        Cookie cookie=new Cookie("token",null);
+        cookie.setMaxAge(0);
+        if (request.getSession().getAttribute("user")==null){
+            System.out.println("session null");
+        }
+        Cookie[] cookies = request.getCookies();
+        for (Cookie cookie1:cookies
+             ) {
+            if (cookie.getName().equals("token")){
+                System.out.println(cookie1.getValue());
+            }
+        }
+        return "redirect:/";
     }
 }
